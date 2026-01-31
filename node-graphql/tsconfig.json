@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",    
+    "strict": true,
+    "skipLibCheck": true, 
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,    
+    "strictPropertyInitialization": false     
+  },
+  "include": ["src/**/*"]
+}
