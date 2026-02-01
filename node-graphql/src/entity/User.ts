@@ -45,14 +45,13 @@ export class User {
     @Column({ type: "int", default: 0 })
     mailtoken: number;
 
+    @Field(() => String, { nullable: true }) 
+    @Column({ type: "text", nullable: true })
+    secret?: string | null;
 
     @Field(() => String, { nullable: true }) 
     @Column({ type: "text", nullable: true })
-    secret?: string;
-
-    @Field(() => String, { nullable: true }) 
-    @Column({ type: "text", nullable: true })
-    qrcodeurl?: string;
+    qrcodeurl?: string | null;
 
     @Field(() => String)    
     @Column({ type: "varchar", length: 255, default: "pix.png" })    

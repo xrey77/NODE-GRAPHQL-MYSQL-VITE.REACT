@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "http://localhost:3000/graphql",
   headers: {'Accept': 'application/json',
             'Content-Type': 'application/json'}
 })
@@ -22,15 +22,51 @@ export default function Prodcatalog() {
     const [message, setMessage] = useState('');
 
     const fetchCatalog = async (pg: any) => {
-      api.get(`/api/products/list/${pg}`)
-      .then((res: any) => {
-        setProds(res.data.products);
-        setTotpage(res.data.totpage);
-        setPage(res.data.page);
-      }, (error: any) => {
-              setMessage(error.response.data.message);
-              return;
-      });      
+        const productsQuery = {
+            query: `
+                mutation ListProducts($page: Int!) {
+                    getAllproducts(page: $page) {
+                        products {
+                            id
+                            category
+                            descriptions
+                            qty
+                            unit
+                            sellprice
+                            productpicture
+                        }
+                        page
+                        totpage
+                        totalrecords
+                    }
+                }
+            `,
+            variables: { page: pg }
+        };
+
+        try {
+            const res = await api.post('', productsQuery);
+            const result = res.data.data?.getAllproducts; 
+            
+            if (result) {
+                setProds(result.products);
+                // setTotalrecs(result.totalrecords);
+                setTotpage(result.totpage);
+            }
+        } catch (error: any) {
+            setMessage(error.message);
+        }
+
+
+      // api.get(`/api/products/list/${pg}`)
+      // .then((res: any) => {
+      //   setProds(res.data.products);
+      //   setTotpage(res.data.totpage);
+      //   setPage(res.data.page);
+      // }, (error: any) => {
+      //         setMessage(error.response.data.message);
+      //         return;
+      // });      
     }
 
     useEffect(() => {
@@ -39,35 +75,26 @@ export default function Prodcatalog() {
 
     const firstPage = (event: any) => {
         event.preventDefault();    
-        page = 1;
-        return fetchCatalog(page);
+        return fetchCatalog(1);
       }
     
       const nextPage = (event: any) => {
         event.preventDefault();    
-        if (page == totpage) {
-            setPage(totpage);
-            return;
-        } else {
-          page++;
-          return fetchCatalog(page);  
-        }
+        if (page === totpage) return;
+        let pg: number = page;
+        pg++;
+        setPage(pg)
+        fetchCatalog(pg);
       }
     
       const prevPage = (event: any) => {
         event.preventDefault();    
-        if (page === 1) {
-          setPage(1);
-          return;
-          }
-          page--;
-          return fetchCatalog(page);
+        if (page > 1)  setPage(prev => prev - 1);  
       }
     
       const lastPage = (event: any) => {
         event.preventDefault();
-        page = totpage;
-        return fetchCatalog(page);
+        return fetchCatalog(totpage);
       }
 
     return(
@@ -79,7 +106,7 @@ export default function Prodcatalog() {
                     return (
                       <div className='col-md-4'>
                       <div key={item['id']} className="card mx-3 mt-3">
-                          <img src={item['productpicture']} className="card-img-top product-size" alt=""/>
+                          <img src={`http://localhost:3000/products/${item['productpicture']}`} className="card-img-top product-size" alt=""/>
                           <div className="card-body">
                             <h5 className="card-title">Descriptions</h5>
                             <p className="card-text desc-h">{item['descriptions']}</p>

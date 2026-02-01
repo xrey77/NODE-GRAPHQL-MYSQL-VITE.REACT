@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { ObjectType, Field, ID, Int } from "type-graphql"; // Example library
-import { Decimal128 } from "typeorm/browser";
 
 @ObjectType() 
 @Entity()
@@ -27,12 +26,15 @@ export class Product {
     unit: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    @Field(() => Number)    
     costprice: number;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    @Field(() => Number)    
     sellprice: number;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    @Field(() => Number)    
     saleprice: number;
 
     @Field(() => String)    

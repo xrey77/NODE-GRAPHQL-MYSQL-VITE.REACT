@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { GraphQLUpload, graphqlUploadExpress } from "graphql-upload-ts";
 import { AppDataSource } from "./data-source.js";
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
@@ -13,6 +14,10 @@ import { GetUsers } from "./users/getusers.js";
 import { GetUserId } from "./users/getuserid.js";
 import { ChangePassword } from "./users/changepassword.js";
 import { UpdateProfile } from "./users/updateprofile.js";
+import { UploadPicture } from "./users/uploadpicture.js";
+import { ActivateMFA } from "./users/activatemfa.js";
+import { VerifyMFA } from "./users/verifymfa.js";
+import { ListProducts } from "./products/list.js";
 
 async function bootstrap() {
 
@@ -31,12 +36,30 @@ async function bootstrap() {
 
   // Build Type-GraphQL Schema
   const schema = await buildSchema({
-    resolvers: [GetUsers, GetUserId, UserRegistration, UserLogin, ChangePassword, UpdateProfile],
+    resolvers: [
+      GetUsers,
+      GetUserId,
+      UserRegistration,
+      UserLogin,
+      ChangePassword,
+      UpdateProfile,
+      UploadPicture,
+      ActivateMFA,
+      VerifyMFA,
+      ListProducts
+    ],
+    scalarsMap: [
+      { 
+        type: GraphQLUpload as any, 
+        scalar: GraphQLUpload 
+      }
+    ],  
   });
 
   // Create Apollo Server Instance
   const server = new ApolloServer({
     schema,
+    // uploads: false, 
   });
 
   // Start Apollo Server before applying middleware
@@ -52,6 +75,7 @@ async function bootstrap() {
   app.use(
     '/graphql',
     cors<cors.CorsRequest>(),
+    graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }),
     express.json(),
     expressMiddleware(server, {
       context: async ({ req }) => ({ token: req.headers.authorization }),

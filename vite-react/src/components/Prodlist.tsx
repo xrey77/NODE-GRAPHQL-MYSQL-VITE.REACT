@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "http://localhost:3000/graphql",
   headers: {'Accept': 'application/json',
             'Content-Type': 'application/json'}
 })
@@ -18,73 +18,92 @@ export default function Prodlist() {
     return formatter.format(number);
   };
 
-    let [page, setPage] = useState<number>(1);
-    let [totpage, setTotpage] = useState<number>(0);
-    let [totalrecs, setTotalrecs] = useState<number>(0);
+    const [page, setPage] = useState<number>(1);
+    const [totpage, setTotpage] = useState<number>(0);
+    const [totalrecs, setTotalrecs] = useState<number>(0);
+    const [message, setMessage] = useState<string>('');
 
     let [products, setProducts] = useState<[]>([]);
 
-    const fetchProducts = (pg: any) => {
-      api.get(`api/products/list/${pg}`)
-      .then((res: any) => {
-        setProducts(res.data.products);
-        setTotpage(res.data.totpage);
-        setTotalrecs(res.data.totalrecords);
-        setPage(res.data.page);
-      }, (error: any) => {
-              console.log(error.response.data.message);
-              return;
-      });      
-    }
+    const fetchProducts = async (pg: number) => {
+        const productsQuery = {
+            query: `
+                mutation ListProducts($page: Int!) {
+                    getAllproducts(page: $page) {
+                        products {
+                            id
+                            category
+                            descriptions
+                            qty
+                            unit
+                            sellprice
+                            productpicture
+                        }
+                        page
+                        totpage
+                        totalrecords
+                    }
+                }
+            `,
+            variables: { page: pg }
+        };
+
+        try {
+            const res = await api.post('', productsQuery);
+            const result = res.data.data?.getAllproducts; 
+            
+            if (result) {
+                setProducts(result.products);
+                setTotalrecs(result.totalrecords);
+                setTotpage(result.totpage);
+            }
+        } catch (error: any) {
+            setMessage(error.message);
+        }
+    };
+
 
     useEffect(() => {
       fetchProducts(page);
    },[page]);
 
     const firstPage = (event: any) => {
-        event.preventDefault();    
-        page = 1;
-        fetchProducts(page);
+        event.preventDefault();            
+        fetchProducts(1);
         return;    
       }
     
       const nextPage = (event: any) => {
         event.preventDefault();    
-        if (page == totpage) {
-            setPage(totpage);
-            return;
-        }
-        page++;
-        return fetchProducts(page);
+        if (page === totpage) return;
+        let pg: number = page;
+        pg++;
+        setPage(pg)
+        fetchProducts(pg);
       }
     
       const prevPage = (event: any) => {
         event.preventDefault();    
-        if (page === 1) {
-          return;
-          }
-          page--;
-          return fetchProducts(page);
+        if (page > 1)  setPage(prev => prev - 1);  
       }
     
       const lastPage = (event: any) => {
         event.preventDefault();
-        page = totpage;
-        return fetchProducts(page);
+        return fetchProducts(totpage);
       }  
   
   return (
     <div className="container">
             <h1 className='text-warning embossed mt-3'>Products List</h1>
-
-            <table className="table">
+            <div>{message}</div>
+            <table className="table table-info table-striped table-hover">
             <thead>
                 <tr>
-                <th scope="col">#</th>
-                <th scope="col">Descriptions</th>
-                <th scope="col">Qty</th>
-                <th scope="col">Unit</th>
-                <th scope="col">Price</th>
+                <th className='bg-primary text-white' scope="col">#</th>
+                <th className='bg-primary text-white' scope="col">Descriptions</th>
+                <th className='bg-primary text-white' scope="col">Qty</th>
+                <th className='bg-primary text-white' scope="col">Unit</th>
+                <th className='bg-primary text-white' scope="col">Price</th>
                 </tr>
             </thead>
             <tbody>

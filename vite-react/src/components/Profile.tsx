@@ -10,7 +10,7 @@ const api = axios.create({
 
 const mapi = axios.create({
   baseURL: "http://localhost:3000/graphql",
-  headers: {'Accept': 'application/json',
+  headers: {'Accept': 'multipart/form-data',
           'Content-Type': 'multipart/form-data',}
 })
 
@@ -71,7 +71,7 @@ export default function Profile() {
             setMobile(userData.mobile);
             let userpic = `http://localhost:3000/users/${userData.userpic}`;
             setUserpicture(userpic);            
-            if (userData.qrcodeurl) {
+            if (userData.qrcodeurl != null) {
                 setQrcodeurl(userData.qrcodeurl);
             } else {
                 setQrcodeurl('http://localhost:3000/images/qrcode.png');
@@ -131,9 +131,7 @@ export default function Profile() {
         };
 
         try {
-            const res = await api.post('', profileQuery);
-            
-            // Handle GraphQL Errors (e.g., User Not Found)
+            const res = await api.post('', profileQuery);            
             if (res.data.errors) {
                 setProfileMsg(res.data.errors[0].message);
                 return;
@@ -144,55 +142,59 @@ export default function Profile() {
                 setProfileMsg(result.message);
                 setTimeout(() => setProfileMsg(''), 3000);
             }
-        } catch (error) {
-            // Handle Network/Server Errors
-            setProfileMsg("An unexpected error occurred.");
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.errors?.[0]?.message || error.message;
+            setProfileMsg(errorMsg);
+            setTimeout(() => setProfileMsg(''), 3000);
         }
-
-        // const jsondata =JSON.stringify({id: userid, firstname: fname, lastname: lname, mobile: mobile });
-        // api.patch(`api/updateprofile`, jsondata, { headers: {
-        //     Authorization: `Bearer ${token}`
-        // }})
-        // .then((res: any) => {
-        //     setProfileMsg(res.data.message);
-        //     setTimeout(() => {
-        //         setProfileMsg('');
-        //     },3000);
-        //     return;
-        // }, (error: any) => {
-        //     setProfileMsg(error.response.data.messages.error);            
-        //     setTimeout(() => {
-        //         setProfileMsg('');
-        //     },3000);
-        //     return;
-        // });
     }
 
-    const changePicture = (event: any) => {
+    const changePicture = async (event: any) => {
         event.preventDefault();
-            var pix = URL.createObjectURL(event.target.files[0]);
-            jQuery('#userpic').attr('src', pix);
+        const file = event.target.files[0];
+        if (!file) return;
+        var pix = URL.createObjectURL(event.target.files[0]);
+        jQuery('#userpic').attr('src', pix);
+
+        const operations = JSON.stringify({
+            query: `
+                mutation UploadPicture($id: Int!, $userpic: Upload!) {
+                    profilepicUpload(id: $id, userpic: $userpic) {
+                        message
+                        id
+                    }
+                }
+            `,
+            variables: { id: parseInt(userid), userpic: null }
+        });
+
+        const map = JSON.stringify({ "0": ["variables.userpic"] });
+
+        try {
             const formData = new FormData();
-            formData.append('userpic', event.target.files[0]);
-            api.patch(`api/uploadpicture/${userid}`, formData, {headers: {
-                Authorization: `Bearer ${token}`
-            }})
-            .then((res: any) => {
-                setProfileMsg(res.data.message);
-                setTimeout(() => {
-                    sessionStorage.setItem('USERPIC',res.data.userpic)
-                    setProfileMsg('');
-                    location.reload();
-                },3000);
-                return;
-            }, (error: any) => {
-                setProfileMsg(error.response.data.message);
-                setTimeout(() => {
-                    setProfileMsg('');
-                },3000);
-                return;
+            formData.append("operations", operations);
+            formData.append("map", map);
+            formData.append("0", file); 
+
+            const res = await mapi.post('', formData, {
+                headers: {
+                    'apollo-require-preflight': 'true',
+                    'Accept': 'application/json'                     
+                 }
             });
-    }
+
+            if (res.data.errors) {
+                setProfileMsg(res.data.errors[0].message);
+            } else {
+                setProfileMsg(res.data.data.profilepicUpload.message);
+            }
+            setTimeout(() => setProfileMsg(''), 3000);
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.errors?.[0]?.message || error.message;
+            setProfileMsg(errorMsg);
+            setTimeout(() => setProfileMsg(''), 3000);
+        }
+    };
 
     const cpwdCheckbox = (e: any) => {
         if (e.target.checked) {
@@ -225,45 +227,85 @@ export default function Profile() {
         }
     }
 
-    const enableMFA = () => {
-        const data =JSON.stringify({id: userid, Twofactorenabled: true });
-        api.patch(`api/mfa/activate`, data, {headers: {
-            Authorization: `Bearer ${token}`
-        }})
-        .then((res: any) => {
-            setProfileMsg(res.data.message);
-            setTimeout(() => {
-                setQrcodeurl(res.data.qrcodeurl);
-                // jQuery("#googleAuth").attr('src', res.data.qrcodeurl);
-                setProfileMsg('');
-            },3000);
-        }, (error: any) => {
-            setProfileMsg(error.response.data.message);
-            setTimeout(() => {
-                setProfileMsg('');
-            },3000);
-            return;
-        });
+    const enableMFA = async () => {
+        const mfaQuery = {
+            query: `
+                mutation ActivateMFA(
+                    $id: Int!, 
+                    $TwoFactorEnabled: Boolean!) {
+                    mfaActivation(id: $id, TwoFactorEnabled: $TwoFactorEnabled) {
+                        message
+                        id
+                        qrcodeurl
+                    }
+                }
+            `,
+            variables: { id: parseInt(userid), TwoFactorEnabled: true}
+        };
+
+        try {
+            const res = await api.post('', mfaQuery);            
+            if (res.data.errors) {
+                setProfileMsg(res.data.errors[0].message);
+                return;
+            }
+
+            const result = res.data.data?.mfaActivation;
+            console.log(result);
+
+            if (result?.message) {
+                setProfileMsg(result.message);
+                setTimeout(() => {
+                    setProfileMsg('');
+                    setQrcodeurl(result.qrcodeurl);
+                }, 3000);
+            }
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.errors?.[0]?.message || error.message;
+            setProfileMsg(errorMsg);
+            setTimeout(() => setProfileMsg(''), 3000);
+        }
     }
 
-    const disableMFA = () => {
-        const jsonData =JSON.stringify({id: userid, Twofactorenabled: false });      
-        api.patch(`api/mfa/activate`, jsonData, {headers: {
-            Authorization: `Bearer ${token}`
-        }})
-        .then((res: any) => {
-            setProfileMsg(res.data.message);
-            setQrcodeurl('/images/qrcode.png');                
+    const disableMFA = async () => {
+        const mfaQuery = {
+            query: `
+                mutation ActivateMFA(
+                    $id: Int!, 
+                    $TwoFactorEnabled: Boolean!) {
+                    mfaActivation(id: $id, TwoFactorEnabled: $TwoFactorEnabled) {
+                        message
+                        id
+                    }
+                }
+            `,
+            variables: { id: parseInt(userid), TwoFactorEnabled: false}
+        };
+
+        try {
+            const res = await api.post('', mfaQuery);            
+            if (res.data.errors) {
+                setProfileMsg(res.data.errors[0].message);
+                setQrcodeurl('/images/qrcode.png');
+                setTimeout(() => setProfileMsg(''), 3000);
+                return;
+            }
+
+            const result = res.data.data?.mfaActivation;
+            if (result?.message) {
+                console.log(result.qrcodeurl);
+                setProfileMsg(result.message);
+                setTimeout(() => {
+                    setProfileMsg('');
+                }, 3000);
+            }
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.errors?.[0]?.message || error.message;
+            setProfileMsg(errorMsg);
             setTimeout(() => {
                 setProfileMsg('');
-            },3000);
-        }, (error: any) => {
-            setProfileMsg(error.response.data.message);
-            setTimeout(() => {
-                setProfileMsg('');
-            },3000);
-            return;
-        });
+            }, 3000);
+        }
     }
 
     const changePassword = async (event: any) => {
