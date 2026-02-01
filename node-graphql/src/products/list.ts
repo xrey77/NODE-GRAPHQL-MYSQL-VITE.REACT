@@ -1,8 +1,6 @@
 import { Resolver, Query, Arg, ObjectType, Field, Int, Mutation } from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { Product } from "../entity/Product.js";
-// import { GraphQLError } from "graphql";
-// import { getPaginatedListProducts } from '../middleware/paginate.products.js';
 
 export const getPaginatedListProducts = async (page: number): Promise<{ data: Product[], count: number }> => {
 
@@ -40,19 +38,16 @@ class PaginatedProducts {
   @Field(() => Int)
   page: number;
 
-//   @Field(() => Boolean)
-//   hasMore: boolean;
 }
 
 @Resolver()
 export class ListProducts {
-  @Mutation(() => PaginatedProducts) // Changed to @Query for better convention
+  @Query(() => PaginatedProducts)
   async getAllproducts(
     @Arg("page", () => Int) page: number
   ): Promise<PaginatedProducts> {
     const paginatedResult = await getPaginatedListProducts(page);
     const totalpage = Math.ceil(paginatedResult.count / 5);
-    console.log(paginatedResult.data);
     return {
         products: paginatedResult.data,
         totalrecords: paginatedResult.count,
@@ -61,33 +56,3 @@ export class ListProducts {
     };
   }
 }
-
-// @Resolver()
-// export class ListProducts {
-//   @Mutation(() => PaginatedProducts)
-//   async getAllproducts(
-//     @Arg("page", () => Int) page: number
-//   ): Promise<PaginatedProducts> {
-
-//         try {
-//             const paginatedResult = await getPaginatedListProducts(page);
-//             if (paginatedResult.data.length > 0) {
-
-//                 const totalpage = Math.ceil(paginatedResult.count / 5);
-//                 return {
-//                     products: paginatedResult.data,
-//                     totalrecords: paginatedResult.count,
-//                     totpage: totalpage,
-//                     page: page
-//                 }
-                
-//             } else {
-//                 throw new GraphQLError('Products not found.');
-//             }
-        
-//         } catch (error: any) {
-//                 throw new GraphQLError(error.message);
-//         }
-
-//   }
-// }

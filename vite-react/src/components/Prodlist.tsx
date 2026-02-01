@@ -28,7 +28,7 @@ export default function Prodlist() {
     const fetchProducts = async (pg: number) => {
         const productsQuery = {
             query: `
-                mutation ListProducts($page: Int!) {
+                query ListProducts($page: Int!) {
                     getAllproducts(page: $page) {
                         products {
                             id

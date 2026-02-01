@@ -18,6 +18,7 @@ import { UploadPicture } from "./users/uploadpicture.js";
 import { ActivateMFA } from "./users/activatemfa.js";
 import { VerifyMFA } from "./users/verifymfa.js";
 import { ListProducts } from "./products/list.js";
+import { SearchProducts } from "./products/search.js";
 
 async function bootstrap() {
 
@@ -46,7 +47,8 @@ async function bootstrap() {
       UploadPicture,
       ActivateMFA,
       VerifyMFA,
-      ListProducts
+      ListProducts,
+      SearchProducts
     ],
     scalarsMap: [
       { 
