@@ -1,7 +1,8 @@
-import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int} from "type-graphql";
+import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int, UseMiddleware} from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { GraphQLError } from "graphql"; 
 import { User } from "../entity/User.js";
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 
 @ObjectType()
 class updateResponse {
@@ -15,8 +16,10 @@ class updateResponse {
 @Resolver()
 export class UpdateProfile {
     @Mutation(() => updateResponse)
+    @UseMiddleware(AuthMiddleware)    
     async profileUpdate(
         @Arg("id", () => Int) id: number,
+        @Arg("token", () => String) token: string,
         @Arg("firstname", () => String) firstname: string,
         @Arg("lastname", () => String) lastname: string,
         @Arg("mobile", () => String) mobile: string,

@@ -1,30 +1,23 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { verifyToken } from '../utils/jwt.utils.js';
+import { MiddlewareFn } from "type-graphql";
+import { verifyToken } from "../utils/jwt.utils.js";
+import { AuthContext } from "../index.js"; 
 
-interface AuthenticatedRequest extends Request {
-  user?: string | jwt.JwtPayload; 
-}
-
-export const authenticateJWT = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (authHeader) {
-    const token = authHeader.split(' ')[1]; // Extract the token from "Bearer <token>"
+export const AuthMiddleware: MiddlewareFn<AuthContext> = async ({ context, args }, next) => {
+    // 1. Try to get token from the query argument first
+    // 2. Fall back to the Authorization header if not found in args
+    const token = args.token || (context.req.headers.authorization?.startsWith('Bearer ') 
+        ? context.req.headers.authorization.split(' ')[1] 
+        : null);
+    
+    if (!token) {
+        throw new Error("Unauthorized Access.");
+    }
 
     try {
-      const user = verifyToken(token);
-      req.user = user;
-      next();
+        const decoded = verifyToken(token);
+        context.user = decoded; 
+        return next();
     } catch (error) {
-      res.status(403).json({
-        message: 'Forbidden Access.'
-      });          
+        throw new Error("Forbidden Access: Invalid or expired bearer token.");
     }
-  } else {
-    res.status(404).json({
-      message: 'Unauthorized Access.'
-    });    
-  }
 };
-

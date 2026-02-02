@@ -32,11 +32,11 @@ export default function Profile() {
     // const [qrcodeurl, setQrcodeurl] = useState<Blob>(new Blob());
     const [qrcodeurl, setQrcodeurl] = useState<string>('');
 
-    const fetchUserData = async (id: any) => {
+    const fetchUserData = async (id: any, token: any) => {
         const getuseridQuery = {
             query: `
-                mutation GetUserId($id: Float!) {
-                    getUserById(id: $id) {
+                query GetUserId($id: Float!, $token: String!) {
+                    getUserById(id: $id, token: $token) {
                         id
                         firstname
                         lastname
@@ -47,11 +47,16 @@ export default function Profile() {
                     }
                 }
             `,
-            variables: { id: Number(id) }
+            variables: { id: Number(id), token: token }
         };
 
         try {
-            const res = await api.post('', getuseridQuery);             
+            const res = await api.post('', getuseridQuery, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                 }
+            });
+
             if (res.data.errors) {
                 setProfileMsg(res.data.errors[0].message);
                 return;
@@ -102,7 +107,7 @@ export default function Profile() {
         }
         setProfileMsg('please wait..');
         setTimeout(() => {
-            fetchUserData(userId);
+            fetchUserData(userId, xtoken);
             setProfileMsg('');
         }, 1000);
     },[]) 
@@ -113,10 +118,11 @@ export default function Profile() {
             query: `
                 mutation UpdateProfile(
                     $id: Int!, 
+                    $token: String!
                     $firstname: String!,
                     $lastname: String!,
                     $mobile: String!) {
-                    profileUpdate(id: $id, firstname: $firstname, lastname: $lastname, mobile: $mobile) {
+                    profileUpdate(id: $id, token: $token, firstname: $firstname, lastname: $lastname, mobile: $mobile) {
                         message
                         id
                     }
@@ -126,12 +132,18 @@ export default function Profile() {
                 id: parseInt(userid), // Ensure it's an integer for GraphQL Int
                 firstname: fname,
                 lastname: lname,
-                mobile: mobile
+                mobile: mobile,
+                token: token
             }
         };
 
         try {
-            const res = await api.post('', profileQuery);            
+            const res = await api.post('', profileQuery, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                 }
+            });     
+
             if (res.data.errors) {
                 setProfileMsg(res.data.errors[0].message);
                 return;
@@ -158,14 +170,14 @@ export default function Profile() {
 
         const operations = JSON.stringify({
             query: `
-                mutation UploadPicture($id: Int!, $userpic: Upload!) {
-                    profilepicUpload(id: $id, userpic: $userpic) {
+                mutation UploadPicture($id: Int!, $token: String!, $userpic: Upload!) {
+                    profilepicUpload(id: $id, token: $token, userpic: $userpic) {
                         message
                         id
                     }
                 }
             `,
-            variables: { id: parseInt(userid), userpic: null }
+            variables: { id: parseInt(userid), token: token, userpic: null }
         });
 
         const map = JSON.stringify({ "0": ["variables.userpic"] });
@@ -179,7 +191,8 @@ export default function Profile() {
             const res = await mapi.post('', formData, {
                 headers: {
                     'apollo-require-preflight': 'true',
-                    'Accept': 'application/json'                     
+                    'Accept': 'application/json',
+                    Authorization: `Bearer ${token}`
                  }
             });
 
@@ -217,9 +230,6 @@ export default function Profile() {
             setShowUpdate(true)
             setShowPwd(false);
             jQuery('#checkChangePassword').prop('checked', false);
-            setTimeout(() => {
-                // getQrcodeurl(userid, token);
-            }, 2000);
             return;
         } else {
             setShowMfa(false);
@@ -232,19 +242,24 @@ export default function Profile() {
             query: `
                 mutation ActivateMFA(
                     $id: Int!, 
+                    $token: String!,
                     $TwoFactorEnabled: Boolean!) {
-                    mfaActivation(id: $id, TwoFactorEnabled: $TwoFactorEnabled) {
+                    mfaActivation(id: $id, token: $token, TwoFactorEnabled: $TwoFactorEnabled) {
                         message
                         id
                         qrcodeurl
                     }
                 }
             `,
-            variables: { id: parseInt(userid), TwoFactorEnabled: true}
+            variables: { id: parseInt(userid), token: token, TwoFactorEnabled: true}
         };
 
         try {
-            const res = await api.post('', mfaQuery);            
+            const res = await api.post('', mfaQuery, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                 }
+            });
             if (res.data.errors) {
                 setProfileMsg(res.data.errors[0].message);
                 return;
@@ -272,18 +287,23 @@ export default function Profile() {
             query: `
                 mutation ActivateMFA(
                     $id: Int!, 
+                    $token: String!,
                     $TwoFactorEnabled: Boolean!) {
-                    mfaActivation(id: $id, TwoFactorEnabled: $TwoFactorEnabled) {
+                    mfaActivation(id: $id, token: $token, TwoFactorEnabled: $TwoFactorEnabled) {
                         message
                         id
                     }
                 }
             `,
-            variables: { id: parseInt(userid), TwoFactorEnabled: false}
+            variables: { id: parseInt(userid), token: token, TwoFactorEnabled: false}
         };
 
         try {
-            const res = await api.post('', mfaQuery);            
+            const res = await api.post('', mfaQuery, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                 }
+            });
             if (res.data.errors) {
                 setProfileMsg(res.data.errors[0].message);
                 setQrcodeurl('/images/qrcode.png');
@@ -335,21 +355,26 @@ export default function Profile() {
 
         const passwordQuery = {
             query: `
-                mutation ChangePassword($id: Int!, $password: String!) {
-                    updateUserPassword(id: $id, password: $password) {
+                mutation ChangePassword($id: Int!, $token: String!, $password: String!) {
+                    updateUserPassword(id: $id, token: $token, password: $password) {
                         message
                         id
                     }
                 }
             `,
             variables: { 
-                id: parseInt(userid), // Ensure it's an integer for GraphQL Int
+                id: parseInt(userid),
+                token: token,
                 password: newpassword 
             }
         };
 
         try {
-            const res = await api.post('', passwordQuery);
+            const res = await api.post('', passwordQuery, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                 }
+            });
             
             // Handle GraphQL Errors (e.g., User Not Found)
             if (res.data.errors) {

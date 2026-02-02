@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source.js";
 import { User } from "../entity/User.js";
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'; 
+// import { generateToken } from "../utils/jwt.utils.js";
 
 @ObjectType()
 class LoginResponse {
@@ -11,6 +12,11 @@ class LoginResponse {
 
     @Field(() => User, { nullable: true })
     user?: User;
+}
+
+interface JwtPayload {
+    id : number,
+    email: string,
 }
 
 
@@ -36,9 +42,15 @@ export class UserLogin {
             throw new Error('Invalid password, please try again.');
         }
 
+        // const userInfo: JwtPayload = {
+        //     id: user.id,
+        //     email: user.email
+        // };
+
+        // const token = generateToken(userInfo);
         const token = jwt.sign(
             { userId: user.id }, 
-            process.env.JWT_SECRET || "your_temporary_secret", 
+            process.env.JWT_SECRET || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", 
             { expiresIn: "1d" }
         );        
 

@@ -1,8 +1,9 @@
-import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int } from "type-graphql";
+import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int, UseMiddleware } from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { GraphQLError } from "graphql"; 
 import { User } from "../entity/User.js";
 import { verify } from 'otplib';
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 
 @ObjectType()
 class MFAResponse { 
@@ -19,8 +20,10 @@ class MFAResponse {
 @Resolver()
 export class VerifyMFA {
     @Mutation(() => MFAResponse)
+    @UseMiddleware(AuthMiddleware)    
     async mfaVerification(
         @Arg("id", () => Int) id: number,
+        @Arg("token", () => String) token: string,
         @Arg("otp", () => String) otp: string
     ): Promise<MFAResponse> {
         const userRepository = AppDataSource.getRepository(User);

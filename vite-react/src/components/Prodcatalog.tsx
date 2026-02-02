@@ -22,9 +22,9 @@ export default function Prodcatalog() {
     const [message, setMessage] = useState('');
 
     const fetchCatalog = async (pg: any) => {
-        const productsQuery = {
+        const catalogQuery = {
             query: `
-                mutation ListProducts($page: Int!) {
+                query ListProducts($page: Int!) {
                     getAllproducts(page: $page) {
                         products {
                             id
@@ -45,7 +45,7 @@ export default function Prodcatalog() {
         };
 
         try {
-            const res = await api.post('', productsQuery);
+            const res = await api.post('', catalogQuery);
             const result = res.data.data?.getAllproducts; 
             
             if (result) {
@@ -56,17 +56,6 @@ export default function Prodcatalog() {
         } catch (error: any) {
             setMessage(error.message);
         }
-
-
-      // api.get(`/api/products/list/${pg}`)
-      // .then((res: any) => {
-      //   setProds(res.data.products);
-      //   setTotpage(res.data.totpage);
-      //   setPage(res.data.page);
-      // }, (error: any) => {
-      //         setMessage(error.response.data.message);
-      //         return;
-      // });      
     }
 
     useEffect(() => {

@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import Login from "./Login.tsx";
 import Register from "./Register.tsx";
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const [username, setUsername] = useState<string>('');
   const [userpic, setUserpic] = useState<string>('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const usrname = sessionStorage.getItem('USERNAME');    
@@ -28,6 +30,7 @@ export default function Header() {
     sessionStorage.removeItem('USERNAME');
     sessionStorage.removeItem('USERPIC');
     sessionStorage.removeItem('TOKEN');
+    navigate("/");
     location.reload();
   }
   return (

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { ObjectType, Field, ID, Int } from "type-graphql"; // Example library
+import { ObjectType, Field, ID, Int } from "type-graphql";
 
 @ObjectType() 
 @Entity()

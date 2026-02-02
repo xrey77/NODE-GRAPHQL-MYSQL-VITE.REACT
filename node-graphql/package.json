@@ -44,6 +44,7 @@
     "mysql2": "^3.16.2",
     "otplib": "^13.2.1",
     "path": "^0.12.7",
+    "puppeteer": "^24.36.1",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "type-graphql": "^2.0.0-rc.2",

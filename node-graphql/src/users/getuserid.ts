@@ -1,15 +1,19 @@
-import { Resolver, Arg, Query, Mutation} from "type-graphql";
+import { Resolver, Arg, Query, UseMiddleware} from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { GraphQLError } from "graphql"; 
 import { User } from "../entity/User.js";
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 
 @Resolver()
 export class GetUserId {
 
-    @Mutation(() => User)
+    @Query(() => User)
+    @UseMiddleware(AuthMiddleware)    
     async getUserById(
-        @Arg("id", () => Number) id: number
+        @Arg("id", () => Number) id: number,
+        @Arg("token", () => String) token: string,
     ): Promise<User | null> {
+        console.log("TOKEN............." + token);
         const userRepository = AppDataSource.getRepository(User);
         const user = await userRepository.findOneBy({ id });
 

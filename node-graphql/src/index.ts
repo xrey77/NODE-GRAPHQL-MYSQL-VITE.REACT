@@ -6,7 +6,7 @@ import { expressMiddleware } from '@as-integrations/express5';
 import { buildSchema } from "type-graphql";
 import { UserRegistration } from './auth/register.js';
 import { UserLogin } from "./auth/login.js";
-import express from 'express';
+import express, {Request, Response} from 'express';
 import 'dotenv/config'; 
 import cors from 'cors';
 import http from 'http';
@@ -19,6 +19,14 @@ import { ActivateMFA } from "./users/activatemfa.js";
 import { VerifyMFA } from "./users/verifymfa.js";
 import { ListProducts } from "./products/list.js";
 import { SearchProducts } from "./products/search.js";
+import { ProductReport } from "./products/productreport.js";
+import { SalesChart } from "./products/saleschart.js";
+
+export interface AuthContext {
+  req: Request;
+  res: Response;
+  user: any;
+}
 
 async function bootstrap() {
 
@@ -48,7 +56,9 @@ async function bootstrap() {
       ActivateMFA,
       VerifyMFA,
       ListProducts,
-      SearchProducts
+      SearchProducts,
+      ProductReport,
+      SalesChart
     ],
     scalarsMap: [
       { 
@@ -61,7 +71,6 @@ async function bootstrap() {
   // Create Apollo Server Instance
   const server = new ApolloServer({
     schema,
-    // uploads: false, 
   });
 
   // Start Apollo Server before applying middleware
@@ -80,13 +89,23 @@ async function bootstrap() {
     graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }),
     express.json(),
     expressMiddleware(server, {
-      context: async ({ req }) => ({ token: req.headers.authorization }),
-    }),
+      // context: async ({ req, res }): Promise<AuthContext> => {
+      //   return { req, res, user: null }; 
+      // },      
+      context: async ({ req, res }): Promise<AuthContext> => ({
+        req,
+        res,
+        user: null,
+      }),
+    }),    
+    // expressMiddleware(server, {
+    //   context: async ({ req }) => ({ token: req.headers.authorization }),
+    // }),
   );
 
   // Start the combined server
   await new Promise<void>((resolve) => httpServer.listen({ port: PORT }, resolve));
-  console.log(`🚀 REST API ready at http://localhost:${PORT}/api`);
+  // console.log(`🚀 REST API ready at http://localhost:${PORT}/api`);
   console.log(`🚀 GraphQL ready at http://localhost:${PORT}/graphql`);
 }
 

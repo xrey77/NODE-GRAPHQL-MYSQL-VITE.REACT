@@ -1,6 +1,4 @@
 import {Request, Response} from 'express';
-// import { getPaginatedListProducts } from '../middleware/paginate.products';
-// import { getPaginatedSearchProducts } from '../middleware/paginate.products';
 import { getPaginatedListProducts } from '../middleware/paginate.products.js';
 import { getPaginatedSearchProducts } from '../middleware/paginate.products.js';
 export async function getProductbyid(req: Request, res: Response) {

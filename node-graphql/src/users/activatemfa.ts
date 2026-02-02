@@ -1,6 +1,7 @@
-import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int} from "type-graphql";
+import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int, UseMiddleware} from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { GraphQLError } from "graphql"; 
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 import { User } from "../entity/User.js";
 import * as otplib from 'otplib';
 import * as QRCode from 'qrcode';
@@ -20,8 +21,10 @@ class mfaResponse {
 @Resolver()
 export class ActivateMFA {
     @Mutation(() => mfaResponse)
+    @UseMiddleware(AuthMiddleware)    
     async mfaActivation(
         @Arg("id", () => Int) id: number,
+        @Arg("token", () => String) token: string,
         @Arg("TwoFactorEnabled", () => Boolean) TwoFactorEnabled: boolean
     ): Promise<mfaResponse> {
         const userRepository = AppDataSource.getRepository(User);

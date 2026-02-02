@@ -1,30 +1,33 @@
-import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int} from "type-graphql";
+import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int, UseMiddleware} from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { GraphQLError } from "graphql"; 
 import { User } from "../entity/User.js";
 import * as bcrypt from 'bcrypt';
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 
 @ObjectType()
 class changeResponse {
     @Field(() => String, { nullable: true })
     message: string;
 
-    @Field(() => Number, { nullable: true }) // Added this to match your frontend query
+    @Field(() => Number, { nullable: true }) 
     id?: number;
 }
 
 @Resolver()
 export class ChangePassword {
     @Mutation(() => changeResponse)
+    @UseMiddleware(AuthMiddleware)    
     async updateUserPassword(
-        @Arg("id", () => Int) id: number, // Use Int for database IDs
+        @Arg("id", () => Int) id: number,
+        @Arg("token", () => String) token: string,
         @Arg("password", () => String) password: string 
     ): Promise<changeResponse> {
+        console.log("TOKEN............." + token);
         const userRepository = AppDataSource.getRepository(User);
         const user = await userRepository.findOneBy({ id });
 
         if (!user) {
-            // Throwing errors in TypeGraphQL: https://typegraphql.com
             throw new GraphQLError(`User with ID ${id} not found`);
         }
 

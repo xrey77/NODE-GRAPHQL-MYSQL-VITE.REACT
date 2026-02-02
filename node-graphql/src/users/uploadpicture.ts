@@ -1,9 +1,10 @@
-import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int} from "type-graphql";
+import { Resolver, Arg, Query, Mutation, ObjectType, Field, Int, UseMiddleware} from "type-graphql";
 import { AppDataSource } from "../data-source.js";
 import { User } from "../entity/User.js";
 import { GraphQLUpload, FileUpload } from "graphql-upload-ts";
 import { createWriteStream } from "fs";
 import path from "path";
+import { AuthMiddleware } from "../middleware/auth.middleware.js";
 
 @ObjectType()
 class uploadResponse {
@@ -17,8 +18,10 @@ class uploadResponse {
 @Resolver()
 export class UploadPicture {
     @Mutation(() => uploadResponse)
+    @UseMiddleware(AuthMiddleware)    
     async profilepicUpload(
         @Arg("id", () => Int) id: number,
+        @Arg("token", () => String) token: string,
         @Arg("userpic", () => GraphQLUpload) upload: FileUpload,
     ): Promise<uploadResponse> {
         const { createReadStream, filename } = await upload;
